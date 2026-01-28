@@ -1,0 +1,29 @@
+# mv_hourly_rollup.pipe
+# Materialized view: Aggregate raw events into hourly metrics
+
+DESCRIPTION >
+    Transforms raw ad_events into hourly campaign aggregates.
+    Runs automatically on each INSERT to ad_events.
+    No scheduling required - pure INSERT trigger semantics.
+
+NODE hourly_aggregation
+SQL >
+    SELECT
+        toStartOfHour(event_time) AS hour,
+        campaign_id,
+        game_id,
+        placement_type,
+        
+        countState() AS impressions,
+        uniqState(device_id) AS unique_devices,
+        sumState(toUInt64(is_viewable)) AS viewable_impressions,
+        sumState(toUInt64(event_type = 'click')) AS clicks,
+        sumState(revenue) AS revenue,
+        sumState(cost) AS cost
+        
+    FROM ad_events
+    WHERE event_type IN ('impression', 'click')
+    GROUP BY hour, campaign_id, game_id, placement_type
+
+TYPE MATERIALIZED
+DATASOURCE hourly_campaign_metrics

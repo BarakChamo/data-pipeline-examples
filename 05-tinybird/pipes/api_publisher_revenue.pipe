@@ -1,0 +1,42 @@
+# api_publisher_revenue.pipe
+# REST API endpoint for publisher revenue reporting
+
+DESCRIPTION >
+    Returns revenue metrics for the publisher dashboard.
+    Groups by game and placement type.
+    Supports date range filtering.
+
+NODE publisher_revenue
+SQL >
+    %
+    SELECT
+        game_id,
+        placement_type,
+        
+        countMerge(impressions) AS impressions,
+        uniqMerge(unique_devices) AS unique_reach,
+        sumMerge(revenue) AS revenue,
+        
+        -- Publisher metrics
+        sumMerge(revenue) / countMerge(impressions) * 1000 AS ecpm,
+        countMerge(impressions) / uniqMerge(unique_devices) AS frequency
+        
+    FROM hourly_campaign_metrics
+    WHERE 1=1
+        {% if defined(game_id) %}
+        AND game_id = {{ UInt32(game_id) }}
+        {% end %}
+        {% if defined(placement_type) %}
+        AND placement_type = {{ String(placement_type) }}
+        {% end %}
+        {% if defined(start_date) %}
+        AND hour >= {{ DateTime(start_date) }}
+        {% end %}
+        {% if defined(end_date) %}
+        AND hour < {{ DateTime(end_date) }}
+        {% end %}
+    GROUP BY game_id, placement_type
+    ORDER BY revenue DESC
+    LIMIT {{ UInt32(limit, 100) }}
+
+TYPE ENDPOINT

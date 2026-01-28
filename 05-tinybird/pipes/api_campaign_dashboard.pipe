@@ -1,0 +1,47 @@
+# api_campaign_dashboard.pipe
+# REST API endpoint for campaign performance dashboard
+
+DESCRIPTION >
+    Returns campaign metrics for the advertiser dashboard.
+    Supports filtering by date range, campaign, and game.
+    Queries pre-aggregated hourly_campaign_metrics for speed.
+
+NODE campaign_metrics
+SQL >
+    %
+    SELECT
+        campaign_id,
+        game_id,
+        
+        countMerge(impressions) AS impressions,
+        uniqMerge(unique_devices) AS unique_reach,
+        sumMerge(viewable_impressions) AS viewable_impressions,
+        sumMerge(clicks) AS clicks,
+        sumMerge(revenue) AS revenue,
+        sumMerge(cost) AS cost,
+        
+        -- Computed metrics
+        sumMerge(clicks) / countMerge(impressions) AS ctr,
+        sumMerge(viewable_impressions) / countMerge(impressions) AS viewability_rate,
+        sumMerge(revenue) / countMerge(impressions) * 1000 AS ecpm,
+        sumMerge(revenue) - sumMerge(cost) AS profit
+        
+    FROM hourly_campaign_metrics
+    WHERE 1=1
+        {% if defined(campaign_id) %}
+        AND campaign_id = {{ UInt32(campaign_id) }}
+        {% end %}
+        {% if defined(game_id) %}
+        AND game_id = {{ UInt32(game_id) }}
+        {% end %}
+        {% if defined(start_date) %}
+        AND hour >= {{ DateTime(start_date) }}
+        {% end %}
+        {% if defined(end_date) %}
+        AND hour < {{ DateTime(end_date) }}
+        {% end %}
+    GROUP BY campaign_id, game_id
+    ORDER BY impressions DESC
+    LIMIT {{ UInt32(limit, 100) }}
+
+TYPE ENDPOINT

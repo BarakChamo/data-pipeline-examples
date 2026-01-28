@@ -1,0 +1,22 @@
+# hourly_campaign_metrics.datasource
+# Pre-aggregated metrics table - populated by materialized view
+
+DESCRIPTION >
+    Hourly campaign performance metrics.
+    Used as target for mv_hourly_rollup pipe.
+    Stores aggregate states for flexible re-aggregation.
+
+SCHEMA >
+    `hour` DateTime,
+    `campaign_id` UInt32,
+    `game_id` UInt32,
+    `placement_type` LowCardinality(String),
+    `impressions` AggregateFunction(count, UInt64),
+    `unique_devices` AggregateFunction(uniq, String),
+    `viewable_impressions` AggregateFunction(sum, UInt64),
+    `clicks` AggregateFunction(sum, UInt64),
+    `revenue` AggregateFunction(sum, Decimal64(6)),
+    `cost` AggregateFunction(sum, Decimal64(6))
+
+ENGINE AggregatingMergeTree
+ENGINE_SORTING_KEY hour, campaign_id, game_id, placement_type

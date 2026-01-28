@@ -1,0 +1,33 @@
+# ad_events.datasource
+# Raw event landing zone - receives data from Vercel Edge Functions
+
+DESCRIPTION >
+    Incoming ad events from game SDK integrations.
+    High-volume append-only table with 90-day retention.
+
+SCHEMA >
+    `event_id` UUID `json:$.event_id`,
+    `event_time` DateTime64(3) `json:$.timestamp`,
+    `event_type` LowCardinality(String) `json:$.type`,
+    `campaign_id` UInt32 `json:$.campaign.id`,
+    `advertiser_id` UInt32 `json:$.campaign.advertiser_id`,
+    `game_id` UInt32 `json:$.game.id`,
+    `publisher_id` UInt32 `json:$.game.publisher_id`,
+    `placement_type` LowCardinality(String) `json:$.placement.type`,
+    `device_id` String `json:$.device.id`,
+    `device_type` LowCardinality(String) `json:$.device.type`,
+    `country` LowCardinality(String) `json:$.geo.country`,
+    `revenue` Decimal64(6) `json:$.revenue`,
+    `cost` Decimal64(6) `json:$.cost`,
+    `is_viewable` UInt8 `json:$.viewability.is_viewable`,
+    `view_duration_ms` UInt32 `json:$.viewability.duration_ms`
+
+ENGINE MergeTree
+ENGINE_PARTITION_KEY toYYYYMM(event_time)
+ENGINE_SORTING_KEY game_id, campaign_id, toStartOfHour(event_time), event_type, event_id
+ENGINE_TTL event_time + INTERVAL 90 DAY DELETE
+
+# Ingestion settings
+IMPORT_SERVICE 'events_api'
+IMPORT_SCHEDULE @streaming
+IMPORT_STRATEGY append
