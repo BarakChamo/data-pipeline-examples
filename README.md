@@ -83,3 +83,5 @@ These examples are designed to be run against a ClickHouse instance. You can:
 - [Tinybird Documentation](https://tinybird.co/docs)
 - [MergeTree Engine Family](https://clickhouse.com/docs/en/engines/table-engines/mergetree-family)
 - [Aggregate Function Combinators](https://clickhouse.com/docs/en/sql-reference/aggregate-functions/combinators)
+- [Web Analytics Starter Kit](https://github.com/tinybirdco/web-analytics-starter-kit/tree/9e04882f4f6f2e7f2d973879ff85eaa28f4e28bb)
+- [Logs Explorer Starter Kit](https://github.com/tinybirdco/logs-explorer-template)
